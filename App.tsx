@@ -1,5 +1,8 @@
+import * as Expo from 'expo';
 import React from 'react';
-import { StyleSheet, Text, View, Button, TextInput } from 'react-native';
+import { StyleSheet, Text, View, Button, TextInput, StatusBar, Platform } from 'react-native';
+import { Container, Content, Header, Left, Body, Right, Title } from 'native-base'
+import Head from './ui/Head';
 
 interface Props {
 
@@ -7,7 +10,8 @@ interface Props {
 
 interface State {
   totalBill: string,
-  tipPercentage: number
+  tipPercentage: number,
+  isReady: boolean
 }
 
 export default class App extends React.Component<Props, State> {
@@ -15,8 +19,22 @@ export default class App extends React.Component<Props, State> {
     super(props);
     this.state = {
       totalBill: '',
-      tipPercentage: .15
+      tipPercentage: .15,
+      isReady: false
     }
+  }
+
+  componentWillMount() {
+    this.loadFonts();
+  }
+
+  async loadFonts() {
+    await Expo.Font.loadAsync({
+      Roboto: require("native-base/Fonts/Roboto.ttf"),
+      Roboto_medium: require("native-base/Fonts/Roboto_medium.ttf"),
+      Ionicons: require("@expo/vector-icons/fonts/Ionicons.ttf")
+    });
+    this.setState({ isReady: true });
   }
 
   handleInput = (text: string) :void => {
@@ -32,40 +50,47 @@ export default class App extends React.Component<Props, State> {
       let tipCalc = (parseFloat(this.state.totalBill) * (this.state.tipPercentage));
       tip = (Math.round(tipCalc * 100) / 100).toFixed(2);
     }
-
+    
+    if (!this.state.isReady) {
+      return <Expo.AppLoading />;
+    }
     return (
-      <View style={styles.container}>
-        <Text>${tip}</Text>
-        <TextInput 
-          onChangeText={this.handleInput}
-          value={this.state.totalBill}
-          style={styles.input}
-          placeholder="$0.00"
-          keyboardType="number-pad"
-        />
-        <View style={styles.tipButtons}>
-          {tipPercentages.map((percent, index) => (
-            <Button 
-              key={index}
-              title={tipPercentages[index] * 100 + '%'} 
-              onPress={() => this.setState({ tipPercentage: tipPercentages[index]})}
+      
+      <Container>
+        <Head />
+        <Content padder>
+          <View style={styles.container}>
+            <Text>${tip}</Text>
+            <TextInput 
+              onChangeText={this.handleInput}
+              value={this.state.totalBill}
+              style={styles.input}
+              placeholder="$0.00"
+              keyboardType="numeric"
             />
-          ))
-          }
-        </View>
-      </View>
+            <View style={styles.tipButtons}>
+              {tipPercentages.map((percent, index) => (
+                <Button 
+                  key={index}
+                  title={tipPercentages[index] * 100 + '%'} 
+                  onPress={() => this.setState({ tipPercentage: tipPercentages[index]})}
+                />
+              ))
+              }
+            </View>
+          </View>
+        </Content>
+      </Container>
     );
   }
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     margin: 20
-
   },
   tipButtons: {
     flexDirection: 'row',
@@ -79,4 +104,4 @@ const styles = StyleSheet.create({
     height: 40,
     width: '100%'
   }
-});
+})
